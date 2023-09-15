@@ -1,7 +1,7 @@
 fx_version "adamant"
 game "gta5"
 
-author "ensaboadorp"
+author "eubrunodev"
 description "A simple FiveM script to spawn NPC's"
 version "1.0"
 
