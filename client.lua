@@ -1,1 +1,80 @@
-require("config")local a=false;local b=false;local c=false;local d;local e={}Citizen.CreateThread(function()while true do for f,g in pairs(Config.locais)do local h,i,j=table.unpack(g)local k=PlayerPedId()local l=GetEntityCoords(k)local m=Vdist(l,g.x,g.y,g.z)a=false;b=false;if m<20.0 and not e[g]then a=true;if not c then RequestModel(g.pedModel)while not HasModelLoaded(g.pedModel)do Citizen.Wait(10)end;npcType=g.type;d=CreatePed(4,g.pedModel,g.x,g.y,g.z-1.0,g.rot,false,false)FreezeEntityPosition(d,true)SetEntityHeading(d,g.rot)SetEntityInvincible(d,true)SetBlockingOfNonTemporaryEvents(d,true)e[g]=d end end;if c and not a then DeleteEntity(d)SetModelAsNoLongerNeeded(g.pedModel)c=false end;if m<2.0 then b=true end;Citizen.Wait(500)end;Citizen.Wait(1000)end end)Citizen.CreateThread(function()while true do if b then showInfoBar(Config.infoBarMessage)end;Citizen.Wait(1)end end)function showInfoBar(n)CurrentActionMsg=n;SetTextComponentFormat('STRING')AddTextComponentString(CurrentActionMsg)DisplayHelpTextFromStringLabel(0,0,1,-1)end;function showNotification(o)SetNotificationTextEntry('STRING')AddTextComponentString(o)DrawNotification(false,true)end
+local cfg = module(GetCurrentResourceName(), "config")
+
+local isNearPed = false
+local isAtPed = false
+local isPedLoaded = false
+local npc
+local spawnedNPCs = {}  -- Armazena os NPCs que foram criados
+
+
+Citizen.CreateThread(function()
+    while true do
+
+        for _,v in pairs(cfg.locais) do
+            local x,y,z = table.unpack(v)
+            local playerPed = PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            
+            local distance = Vdist(playerCoords, v.x,v.y,v.z)
+            
+            isNearPed = false
+            isAtPed = false
+
+            if distance < 20.0 and not spawnedNPCs[v] then 
+                isNearPed = true
+                if not isPedLoaded then 
+                    RequestModel(v.pedModel)
+                    while not HasModelLoaded(v.pedModel) do
+                        Citizen.Wait(1)
+                    end
+                    npcType = v.type
+                    npc = CreatePed(4, v.pedModel, v.x,v.y,v.z - 1.0, v.rot, false, false)
+                    FreezeEntityPosition(npc, true)
+                    SetEntityHeading(npc, v.rot)
+                    SetEntityInvincible(npc, true)
+                    SetBlockingOfNonTemporaryEvents(npc, true)
+                    spawnedNPCs[v] = npc
+                end
+            end
+
+            if isPedLoaded and not isNearPed then 
+            
+                DeleteEntity(npc)
+                SetModelAsNoLongerNeeded(v.pedModel)
+                isPedLoaded = false
+                
+            end
+            if distance < 2.0 then 
+                isAtPed = true
+            end
+            
+            Citizen.Wait(500)
+        end
+        
+        Citizen.Wait(500)
+    end
+
+end)
+
+
+Citizen.CreateThread(function() 
+    while true do
+        if isAtPed then 
+            showNotification(cfg.infoBarMessage)
+        end
+        Citizen.Wait(500)
+    end
+end)
+
+function showNotification (text)
+    SetNotificationTextEntry('STRING')
+    AddTextComponentString(text)
+    DrawNotification(false, true)
+    
+end
+
+function notify(str)
+	SetTextComponentFormat("STRING")
+	AddTextComponentString(str)
+	DisplayHelpTextFromStringLabel(0, 0, 5, -1)
+end
